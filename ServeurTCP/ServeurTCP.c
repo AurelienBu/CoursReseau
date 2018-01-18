@@ -1,39 +1,19 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-
 #include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <linux/sockios.h>
 
-#ifdef __unix__                    /* __unix__ is usually defined by compilers targeting Unix systems */
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
 
-    #define OS_Windows 0
-    #include <unistd.h>
-    #include <stdlib.h>
-    #include <stdio.h>
-    #include <string.h>
-    #include <sys/types.h>
-	#include <sys/socket.h>
-	#include <netdb.h>
-	#include <errno.h>
-	#include <netinet/in.h>
-	#include <net/if.h>
-	#include <sys/ioctl.h>
-	#include <linux/sockios.h>
-	
-	#include <netinet/tcp.h>
-	#include <arpa/inet.h>
-
-#elif defined(_WIN32) || defined(WIN32)     /* _Win32 is usually defined by compilers targeting 32 or   64 bit Windows systems */
-
-    #define OS_Windows 1
-    #include <winsock2.h>
-    #pragma comment(lib, "ws2_32.lib")
-    #include <windows.h>
-    #include <stdio.h>
-    #include <tchar.h>
-
-#endif
 #define PORT 65000
 
 #define MAXSTRING 100
@@ -89,7 +69,7 @@ char *msgClient;
 	bzero(&(adresseSocketServeur.sin_zero),8);
 
 	unsigned int taille =sizeof(struct sockaddr);
-
+    /* Reliage la socket à l'adresse du serveur */
 	if(bind(hSocket, (struct sockaddr *)&adresseSocketServeur, sizeof(struct sockaddr)) == -1){
 		perror("Error bind");
 	}
@@ -98,6 +78,7 @@ char *msgClient;
 	view_ip();
 */
 	int L;
+    /* Attendre qu'un client se connect */
 	if((L=listen(hSocket, 20)) == -1){
 		perror("Erreur Listen");
 		close(hSocket);
@@ -106,6 +87,7 @@ char *msgClient;
 	printf("Listen : %d\n",L);
 	taille = sizeof(struct sockaddr);
 
+    /* Accepter la connexion du client */
 	if( (hSocketDiscute=accept(hSocket, (struct sockaddr *)&adresseSocketClient,	(socklen_t *) &taille)) == -1){
 
 			perror("Erreur accept");
@@ -115,36 +97,24 @@ char *msgClient;
 			
 	}
 	printf("Discute : %d \n",hSocketDiscute);
-					
-
-				msgClient = (char *) malloc(MAXSTRING * sizeof(char));
-				printf("OK\n"); 
-
-				if(recv(hSocketDiscute, msgClient, 256, 0) == -1){
-					perror("Erreur recv");
-				}
-				else
-					fprintf(stderr,"Received : %s\n",msgClient);
-		
-				free(msgClient);
-				
-				if(send(hSocketDiscute, "Ack", strlen("Ack"),0) == -1){
-			
-					perror("Erreur de send");
-					//exit(-1);
-				}
-				
-
+    msgClient = (char *) malloc(MAXSTRING * sizeof(char));
+    printf("OK\n");
+    /* Reception du message client */
+    if(recv(hSocketDiscute, msgClient, 256, 0) == -1){
+        perror("Erreur recv");
+    }
+    else
+        fprintf(stderr,"Received : %s\n",msgClient);
+    free(msgClient);
+    /* Envoi d'une reponse */
+    if(send(hSocketDiscute, "Ack", strlen("Ack"),0) == -1){
+        perror("Erreur de send");
+        //exit(-1);
+    }
 				//else 
-					printf("Send ok\n");
-	
+    printf("Send ok\n");
+	close(hSocket);
 
-
-				close(hSocket);
-				
-	
-		
-	
 	/* Envoie du message vers serveur  */
 
 	/*else {
@@ -156,7 +126,6 @@ char *msgClient;
 	}*/
 
 	close(hSocket);
-	
 
 	return(0);
 }
