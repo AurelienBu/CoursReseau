@@ -30,8 +30,33 @@ void view_ip()
 	printf("IP : %s, Nom : %s\n", inet_ntoa(**adr),host -> h_name);
 	}
  }
-int getAdresseMAC(char* addMAC,int socket){
-	
+
+/* Programme de recupération d'adresse mac */
+/* Attention fonctionnel mais pas mis en forme dans le programme */
+int getAdresseMAC(int socket){
+    
+    /* requet ARP puis enregistrement dans un .txt*/
+    system("rm ~/arpp.txt");
+    system("arp -e > ~/arpp.txt");
+    
+    fp = fopen("/home/workspace/arpp.txt", "r");
+    if(fp==NULL){
+        perror("Erreur d'ouverture de la table ARP");
+        exit(0);
+    }
+    contenu_fp = (char *) malloc(1000 * sizeof(char));
+    while(!feof(fp)) {
+        fgets(contenu_fp, 256, fp);
+        //recherche de l'adresse ip du client dans la table
+        p=strstr(contenu_fp, inet_ntoa(adresseSocketClient.sin_addr));
+        if(p != NULL){
+            break;
+        }
+    }
+    //Recuperation adresse mac
+    mac = strtok(contenu_fp, " ");
+    for(i=0; i<2; i++)
+        mac = strtok(NULL, " ");
 }
 
 int main(int argc, char**argv){
@@ -103,28 +128,22 @@ char *msgClient;
     if(recv(hSocketDiscute, msgClient, 256, 0) == -1){
         perror("Erreur recv");
     }
-    else
+    /* blocage par adresse ip */
+    else {
+     //fprintf(fp,"%s\n",inet_ntoa(adresseSocketClient.sin_addr));
+     if(strcmp("192.168.89.105",inet_ntoa(adresseSocketClient.sin_addr)) == 0)
+        printf("bloqué haha gotta you\n");
+     else
         fprintf(stderr,"Received : %s\n",msgClient);
+     }
+        
     free(msgClient);
     /* Envoi d'une reponse */
     if(send(hSocketDiscute, "Ack", strlen("Ack"),0) == -1){
         perror("Erreur de send");
         //exit(-1);
     }
-				//else 
     printf("Send ok\n");
-	close(hSocket);
-
-	/* Envoie du message vers serveur  */
-
-	/*else {
-		fprintf(fp,"%s\n",inet_ntoa(adresseSocketClient.sin_addr));
-		if(strcmp("192.168.89.105",inet_ntoa(adresseSocketClient.sin_addr)) == 0)
-			printf("bloqué haha gotta you\n");
-		else 
-			printf("%s\n",msgClient);
-	}*/
-
 	close(hSocket);
 
 	return(0);
