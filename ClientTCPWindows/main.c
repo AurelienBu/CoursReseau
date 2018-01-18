@@ -1,10 +1,6 @@
-/*
-    Create a TCP socket
-*/
-
 #include<stdio.h>
 #include<winsock2.h>
-
+/* use the ws2 socket from lib file */
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
 int main(int argc , char *argv[])
@@ -16,7 +12,8 @@ int main(int argc , char *argv[])
     int recv_size;
 
     printf("\nInitialising Winsock...");
-    if (WSAStartup(MAKEWORD(2,2),&wsa) != 0) // a expliquer !
+    /* Prepare the computer to use sockets */
+    if (WSAStartup(MAKEWORD(2,2),&wsa) != 0)
     {
         printf("Failed. Error Code : %d",WSAGetLastError());
         return 1;
@@ -24,14 +21,12 @@ int main(int argc , char *argv[])
 
     printf("Initialised.\n");
 
-    //Create a socket
+    /* Create a socket */
     if((s = socket(AF_INET , SOCK_STREAM , 0 )) == INVALID_SOCKET)
     {
         printf("Could not create socket : %d" , WSAGetLastError());
     }
-
     printf("Socket created.\n");
-
 
     server.sin_addr.s_addr = inet_addr("192.168.43.107");
     server.sin_family = AF_INET;
@@ -46,7 +41,7 @@ int main(int argc , char *argv[])
 
     puts("Connected");
 
-    //Send some data
+    /* Send some data */
     message = "A l'assaut !";
     if( send(s , message , strlen(message) , 0) < 0)
     {
@@ -55,7 +50,7 @@ int main(int argc , char *argv[])
     }
     puts("Data Send\n");
 
-    //Receive a reply from the server
+    /* Receive a reply from the server */
     if((recv_size = recv(s , server_reply , 2000 , 0)) == SOCKET_ERROR)
     {
         puts("recv failed");
@@ -68,6 +63,7 @@ int main(int argc , char *argv[])
     puts("Message recu");
     puts(server_reply);
 
+    /* End of sockeks using */
     WSACleanup();
     return 0;
 }
